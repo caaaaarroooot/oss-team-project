@@ -1,14 +1,12 @@
 import "./App.css";
-import Weather from "./component/Weather";
-import RecipeForm from "./component/RecipeForm";
+import AppRouter from "./router/AppRouter";
 
 function App() {
-    return (
-        <div className="App">
-            <Weather/>
-            <RecipeForm/>
-        </div>
-    );
+  return (
+    <div>
+      <AppRouter />
+    </div>
+  );
 }
 
 export default App;
