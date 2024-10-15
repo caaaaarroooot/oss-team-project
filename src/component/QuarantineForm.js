@@ -87,12 +87,20 @@ const QuarantineForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const currentDate = new Date().toISOString().split('T')[0];
-    const updatedData = {
+    
+    let updatedData = {
       ...formData,
       createdAt: formData.createdAt || currentDate,
       updatedAt: currentDate
     };
-
+  
+    if (formData.otherDetail) {
+      updatedData.symptom = [...updatedData.symptom, formData.otherDetail];
+    }
+  
+    // post 요청 전에 otherDetail 필드 제거
+    delete updatedData.otherDetail;
+  
     try {
       const response = await axios.post('https://670c91777e5a228ec1d0b2ca.mockapi.io/api/healthInfo', updatedData);
       console.log('서버 응답:', response.data);
@@ -101,6 +109,7 @@ const QuarantineForm = () => {
       console.error('데이터 전송 중 오류 발생:', error);
     }
   };
+  
 
   return (
     <div style={{ display: 'flex' }}>
