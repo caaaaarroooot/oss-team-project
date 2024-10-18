@@ -1,12 +1,12 @@
 import "./App.css";
-import Weather from "./component/Weather";
+import AppRouter from "./router/AppRouter";
 
 function App() {
-    return (
-        <div className="App">
-            <Weather></Weather>
-        </div>
-    );
+  return (
+    <div>
+      <AppRouter />
+    </div>
+  );
 }
 
 export default App;
