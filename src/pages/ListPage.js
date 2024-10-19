@@ -420,7 +420,6 @@ const SearchDiv = styled.div`
 `;
 
 const SearchTitile = styled.div`
-    background-color: aliceblue;
     font-size: 20px;
     color: #1b6c8c;
     width: 100%;
