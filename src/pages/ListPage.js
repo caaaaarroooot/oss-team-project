@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Table, TableCell, TableRow, TableHead, TableBody, makeStyles, Button } from "@material-ui/core";
+import { Table, TableCell, TableRow, TableHead, TableBody, Button } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import { deleteUser, getallUsers } from "../service/api";
 import { Link } from "react-router-dom";
 import Delete from "../assets/image/delete.png";
