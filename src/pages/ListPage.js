@@ -6,29 +6,14 @@ import { Link } from "react-router-dom";
 import Delete from "../assets/image/delete.png";
 import Edit from "../assets/image/edit.png";
 import styled from "styled-components";
-
-const useStyle = makeStyles({
-    table: {
-        width: "80%",
-        margin: "50px 100px 100px 140px",
-    },
-    thead: {
-        "& > *": {
-            background: "#000000",
-            color: "#FFFFFF",
-            fontSize: "16px",
-        },
-    },
-    trow: {
-        "& > *": {
-            fontSize: "16px",
-        },
-    },
-});
+import { color } from "../../node_modules/@mui/system/palette/palette.d";
 
 const ListPage = () => {
-    const classes = useStyle();
     const [user, setUser] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
+    const [nameSearch, setNameSearch] = useState("");
+    const [codeSearch, setCodeSearch] = useState("");
+    const [depSearch, setDepSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5; // 페이지당 표시할 항목 수
 
@@ -38,8 +23,8 @@ const ListPage = () => {
 
     const getUsers = async () => {
         const response = await getallUsers();
-        console.log(response);
         setUser(response.data);
+        setFilteredUsers(response.data); // 전체 사용자 목록 설정
     };
 
     const deleteData = async (id) => {
@@ -47,14 +32,44 @@ const ListPage = () => {
         getUsers();
     };
 
+    const handleSearch = () => {
+        let filtered = user;
+
+        if (nameSearch) {
+            filtered = filtered.filter((data) => data.name.toLowerCase().includes(nameSearch.toLowerCase()));
+        }
+
+        if (codeSearch) {
+            filtered = filtered.filter((data) => data.flightCode.toLowerCase().includes(codeSearch.toLowerCase()));
+        }
+
+        if (depSearch) {
+            filtered = filtered.filter((data) => data.departure.toLowerCase().includes(depSearch.toLowerCase()));
+        }
+
+        if (filtered.length === 0) {
+            alert("일치하는 결과가 없습니다.");
+        }
+
+        setFilteredUsers(filtered);
+        setCurrentPage(1); // 검색 후 페이지를 첫 페이지로 초기화
+    };
+
+    const resetSearch = () => {
+        setNameSearch("");
+        setCodeSearch("");
+        setDepSearch("");
+        setFilteredUsers(user); // 모든 리스트 표시
+    };
+
     // 의심으로 분류된 사용자 수 계산
-    const suspectedCount = user.filter((data) => data.symptom && data.symptom.length > 0).length;
-    const totalCount = user.length;
+    const suspectedCount = filteredUsers.filter((data) => data.symptom && data.symptom.length > 0).length;
+    const totalCount = filteredUsers.length;
 
     // 현재 페이지에 표시할 사용자 목록 계산
     const indexOfLastUser = currentPage * itemsPerPage;
     const indexOfFirstUser = indexOfLastUser - itemsPerPage;
-    const currentUsers = user.slice(indexOfFirstUser, indexOfLastUser);
+    const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
     const totalPages = Math.ceil(totalCount / itemsPerPage);
 
@@ -74,7 +89,35 @@ const ListPage = () => {
         <MotherDiv>
             <TitleDiv>입국자 목록 관리</TitleDiv>
             <BodyDiv>
-                <SearchDiv></SearchDiv>
+                <SearchDiv>
+                    <SearchTitile>고급 검색</SearchTitile>
+                    <SearchInputDiv>
+                        <input
+                            type="text"
+                            placeholder="이름으로 검색"
+                            value={nameSearch}
+                            onChange={(e) => setNameSearch(e.target.value)}
+                        />
+                        <input
+                            type="text"
+                            placeholder="항공편명으로 검색"
+                            value={codeSearch}
+                            onChange={(e) => setCodeSearch(e.target.value)}
+                        />
+                        <input
+                            type="text"
+                            placeholder="출발지로 검색"
+                            value={depSearch}
+                            onChange={(e) => setDepSearch(e.target.value)}
+                        />
+                        <Button variant="contained" color="primary" onClick={handleSearch}>
+                            검색
+                        </Button>
+                        <Button variant="contained" color="secondary" onClick={resetSearch}>
+                            초기화
+                        </Button>
+                    </SearchInputDiv>
+                </SearchDiv>
                 <div
                     style={{
                         fontSize: "18px",
@@ -184,7 +227,7 @@ const ListPage = () => {
                     </TableHead>
                     <TableBody>
                         {currentUsers.map((data, index) => (
-                            <TableRow className={classes.trow} key={index}>
+                            <TableRow key={index}>
                                 <TableCell
                                     style={{
                                         fontSize: "23px",
@@ -364,4 +407,21 @@ const SearchDiv = styled.div`
     height: 15%;
     background-color: aliceblue;
     box-sizing: border-box;
+`;
+
+const SearchTitile = styled.div`
+    font-size: 20px;
+    color: #3b7996;
+    width: 100%;
+    height: 30%;
+    border-bottom: 2px solid #3b7996;
+`;
+
+const SearchInputDiv = styled.div`
+    width: 100%;
+    height: 40%;
+    display: flex;
+    flex-direction: row;
+    box-sizing: border-box;
+    justify-content: left;
 `;
