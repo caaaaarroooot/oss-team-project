@@ -4,7 +4,9 @@ import { deleteUser, getallUsers } from "../service/api";
 import { Link } from "react-router-dom";
 import Delete from "../assets/image/delete.png";
 import Edit from "../assets/image/edit.png";
+import Search from "../assets/image/search.png";
 import styled from "styled-components";
+import style from "../../node_modules/@mui/system/esm/style/style";
 
 const ListPage = () => {
     const [user, setUser] = useState([]);
@@ -13,7 +15,7 @@ const ListPage = () => {
     const [codeSearch, setCodeSearch] = useState("");
     const [depSearch, setDepSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5; // 페이지당 표시할 항목 수
+    const itemsPerPage = 10; // 페이지당 표시할 항목 수
 
     useEffect(() => {
         getUsers();
@@ -90,28 +92,38 @@ const ListPage = () => {
                 <SearchDiv>
                     <SearchTitile>고급 검색</SearchTitile>
                     <SearchInputDiv>
-                        <input
+                        <SearchInput
                             type="text"
                             placeholder="이름으로 검색"
                             value={nameSearch}
                             onChange={(e) => setNameSearch(e.target.value)}
                         />
-                        <input
+                        <SearchInput
                             type="text"
                             placeholder="항공편명으로 검색"
                             value={codeSearch}
                             onChange={(e) => setCodeSearch(e.target.value)}
                         />
-                        <input
+                        <SearchInput
                             type="text"
                             placeholder="출발지로 검색"
                             value={depSearch}
                             onChange={(e) => setDepSearch(e.target.value)}
                         />
-                        <Button variant="contained" color="primary" onClick={handleSearch}>
-                            검색
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleSearch}
+                            style={{ borderRadius: "10px", marginRight: "5px" }}
+                        >
+                            <img src={Search} alt="search" width={20} />
                         </Button>
-                        <Button variant="contained" color="secondary" onClick={resetSearch}>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={resetSearch}
+                            style={{ borderRadius: "10px", fontSize: "20px", fontWeight: "700" }}
+                        >
                             초기화
                         </Button>
                     </SearchInputDiv>
@@ -359,11 +371,11 @@ export default ListPage;
 const MotherDiv = styled.div`
     background-color: #e3eff9;
     box-sizing: border-box;
+    overflow: hidden;
     width: 100vw;
-    height: 100vh;
+    height: 93vh;
     display: flex;
     flex-direction: column;
-
     font-size: 20px;
     font-weight: 500;
     padding: 20px;
@@ -388,6 +400,8 @@ const BodyDiv = styled.div`
     width: 100%;
     height: 90%;
     padding: 30px;
+    border-bottom-right-radius: 25px;
+    border-bottom-left-radius: 25px;
 `;
 
 const Pagination = styled.div`
@@ -403,23 +417,36 @@ const Pagination = styled.div`
 const SearchDiv = styled.div`
     width: 100%;
     height: 15%;
-    background-color: aliceblue;
     box-sizing: border-box;
 `;
 
 const SearchTitile = styled.div`
+    background-color: aliceblue;
     font-size: 20px;
-    color: #3b7996;
+    color: #1b6c8c;
     width: 100%;
-    height: 30%;
-    border-bottom: 2px solid #3b7996;
+    height: 40%;
+    font-weight: 700;
+    box-sizing: border-box;
+    padding: 10px;
+    border-bottom: 2px solid #7db1e3;
 `;
 
 const SearchInputDiv = styled.div`
     width: 100%;
-    height: 40%;
+    height: 60%;
     display: flex;
     flex-direction: row;
     box-sizing: border-box;
+    padding: 10px;
     justify-content: left;
+`;
+
+const SearchInput = styled.input`
+    width: 300px;
+    height: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #dfdfdf;
+    margin-right: 10px;
 `;
