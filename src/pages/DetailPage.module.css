@@ -1,0 +1,39 @@
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; 
+    padding: 20px;
+    background-color: rgb(223, 237, 250);
+  }
+  .rightSide {
+    flex-direction: column;
+  }
+  
+  .formWrapper {
+    margin-right: 20px;
+  }
+  
+  .infoWrapper {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .submitButton {
+    margin-top: 20px;
+    padding: 10px 20px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight:bolder;
+    background-color: rgb(69, 166, 235);
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .submitButton:hover {
+    background-color: rgb(255, 255, 255);
+    color: rgb(69, 166, 235);
+  }
+  
