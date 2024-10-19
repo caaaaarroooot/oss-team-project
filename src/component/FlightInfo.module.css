@@ -1,0 +1,156 @@
+/* ArrivalFlights.css */
+
+/* 전체 컴포넌트의 스타일 */
+.arrival-flights-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 40rem;
+    margin: auto;
+    background-color: rgb(69, 85, 105);
+    height: 27rem;
+    color: white;
+}
+
+/* 제목 스타일 */
+.arrival-flights-container h1 {
+    border-top-left-radius: 0.5rem; 
+    border-top-right-radius: 0.5rem ;
+    color: #ffffff ;
+    display: flex ;
+    font-size: 1.8rem ;
+    font-weight: 700 ;
+    justify-content: space-between;
+    margin-bottom: 1 ;
+    padding: 1rem ;
+    text-align: left ;
+    background-color: #313135;
+    width:100%;
+  }
+
+
+/* 구역 선택 섹션 스타일 */
+.zone-select-container {
+    margin-bottom: 1rem;
+    color: white;
+    display: flex;
+    gap: 1rem;
+}
+
+.zone-select-container label {
+    margin-top: 0.2rem;
+    font-weight: bold;
+}
+
+.zone-select-container select {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #424242;
+    background-color: #315996;
+    color: white;
+}
+
+/* 테이블 스타일 */
+.arrival-flights-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.arrival-flights-table th,
+.arrival-flights-table td {
+    border-bottom: 1px solid #ffffff;
+    padding-left: 1rem !important;
+    text-align: left;
+    height: 2.5rem; 
+    color: white;
+}
+
+.arrival-flights-table th {
+    background-color: #114088;
+    font-weight: bold;
+}
+
+.arrival-flights-table td {
+    background-color: #313135;
+}
+
+
+.arrival-flights-table th:first-child,
+.arrival-flights-table th:nth-child(5),
+.arrival-flights-table td:nth-child(5),
+.arrival-flights-table td:first-child {
+    text-align: center;
+    padding-left: 0 !important;
+}
+
+
+/* 페이지네이션 버튼 스타일 */
+.pagination-buttons {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    justify-content: center;
+    gap: 1rem;
+    display: flex;
+}
+
+.pagination-buttons button,
+.refresh-button {
+    padding: 0.3rem;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 3rem;
+    border-color: #ddd;
+}
+
+
+.pagination-buttons button:hover {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 5px rgba(0, 123, 255, 0.5);
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.refresh-button:hover {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 5px rgba(0, 123, 255, 0.5);
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+
+.pagination-buttons button:disabled {
+    display: none;
+}
+
+.no-flights-message {
+    font-style: italic;
+    color: #666;
+    margin-top: 20px;
+} 
+
+button {
+    background-color:unset ;
+    color: white;
+    border: 0 ;
+}
+
+.status-cell {
+    width: 4rem;
+    text-align: center;
+    font-weight: 700;
+}
+
+.status-arrived {
+    background-color: rgb(40, 167, 40) !important;
+    color: black !important;
+}
+
+.status-delayed {
+    background-color: rgb(199, 52, 52) !important;
+    color: rgb(255, 255, 255) !important;
+}
+
+.status-landed {
+    background-color: rgb(255, 208, 0) !important;
+    color: black !important;
+}
