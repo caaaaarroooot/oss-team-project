@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Table, TableCell, TableRow, TableHead, TableBody, Button } from "@mui/material";
-import { makeStyles } from "@mui/styles";
 import { deleteUser, getallUsers } from "../service/api";
 import { Link } from "react-router-dom";
 import Delete from "../assets/image/delete.png";
 import Edit from "../assets/image/edit.png";
 import styled from "styled-components";
-import { color } from "../../node_modules/@mui/system/palette/palette.d";
 
 const ListPage = () => {
     const [user, setUser] = useState([]);
