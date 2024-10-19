@@ -64,13 +64,18 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
 
   const watchedSymptom = watch("symptom", []);
   const watchedOther = watch("other", []);
+  const watchedIsHealthy = watch("isHealthy", true);
+
+  useEffect(() => {
+    if (watchedIsHealthy) {
+      setValue("symptom", []);
+      setValue("other", []);
+    }
+  }, [watchedIsHealthy, setValue]);
 
   useEffect(() => {
     if (watchedSymptom.length > 0 || watchedOther.length > 0) {
       setValue("isHealthy", false);
-    }
-    else {
-      setValue("isHealthy", true);
     }
   }, [watchedSymptom, watchedOther, setValue]);
 
@@ -78,18 +83,22 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
     if (existingData.symptom) {
       const otherSymptom = existingData.symptom.find((item) => item.startsWith('기타: '));
       if (otherSymptom) {
-
         const detailText = otherSymptom.replace('기타: ', '').trim();
         setValue('otherDetail', detailText);
-        
-       
+
         setValue('symptom', [...existingData.symptom.filter((item) => !item.startsWith('기타: ')), '기타']);
       } else {
-       
         setValue('symptom', existingData.symptom);
       }
     }
   }, [existingData, setValue]);
+
+  useEffect(() => {
+    if (existingData.other) {
+      setValue("other", existingData.other);
+    }
+  }, [existingData, setValue]);
+  
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -108,19 +117,19 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
   }, []);
 
   const onSubmit = async (data) => {
-    console.log("전송하려는 데이터:", data); 
+    console.log("전송하려는 데이터:", data);
     const currentDate = new Date().toISOString().split('T')[0];
 
     let updatedData = {
       ...data,
-      createdAt: existingData.createdAt || currentDate, 
+      createdAt: existingData.createdAt || currentDate,
       updatedAt: currentDate,
     };
 
-  if (updatedData.symptom.includes("기타") && updatedData.otherDetail && updatedData.otherDetail.trim() !== '') {
-    updatedData.symptom = [...(updatedData.symptom || []), `기타: ${updatedData.otherDetail}`];
-    updatedData.symptom = updatedData.symptom.filter((item) => item !== "기타");
-  }
+    if (updatedData.symptom.includes("기타") && updatedData.otherDetail && updatedData.otherDetail.trim() !== '') {
+      updatedData.symptom = [...(updatedData.symptom || []), `기타: ${updatedData.otherDetail}`];
+      updatedData.symptom = updatedData.symptom.filter((item) => item !== "기타");
+    }
 
     delete updatedData.otherDetail;
 
@@ -173,7 +182,7 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
 
     if (result.isConfirmed) {
       try {
-        await onDelete(existingData.id); 
+        await onDelete(existingData.id);
         Swal.fire({
           title: '<strong>삭제 완료!</strong>',
           html: '<i>데이터가 성공적으로 삭제되었습니다.</i>',
@@ -323,12 +332,12 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
                                 height: '1rem',
                                 minHeight: '2rem',
                                 minWidth: '150px',
-                                border: '1px solid #ccc', 
+                                border: '1px solid #ccc',
                                 borderRadius: '5px',
                                 display: 'flex',
-                                alignItems: 'center', 
-                                fontSize: '0.75rem', 
-                                paddingBottom: '1.1rem', 
+                                alignItems: 'center',
+                                fontSize: '0.75rem',
+                                paddingBottom: '1.1rem',
                               }),
                             }}
                           />
@@ -639,7 +648,7 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
                       <td colSpan={3} className={watchedSymptom.includes("기타") ? styles.checkedCell : ''}>
                         <Form.Group className={`${styles.inlineFormGroup} ${styles.other}`}>
                           <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="기타" label="기타" checked={field.value?.includes("기타")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
-                          <Controller name="otherDetail" control={control} render={({ field }) => <Form.Control className={styles.formControl} type="text" {...field} value={field.value || ''}/>} />
+                          <Controller name="otherDetail" control={control} render={({ field }) => <Form.Control className={styles.formControl} type="text" {...field} value={field.value || ''} />} />
                         </Form.Group>
                       </td>
                     </tr>
