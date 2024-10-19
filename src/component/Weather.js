@@ -1,13 +1,13 @@
 import { useState } from "react";
 
 function Weather() {
-    const API_KEY = process.env.REACT_APP_WEATHER_KEY;
+    // const API_KEY = process.env.REACT_APP_WEATHER_KEY;
     console.log(process.env.REACT_APP_WEATHER_KEY);
     const [weather, setWeather] = useState(null);
     const [loading, setLoading] = useState(false);
 
     const getWeatherByCurrentLocation = async (lat, lon) => {
-        let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+        let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=052c81a7aff45e07f356d8844ba8d2a2&units=metric`;
         setLoading(true);
         let response = await fetch(url);
         let data = await response.json();

@@ -6,7 +6,6 @@ import Delete from "../assets/image/delete.png";
 import Edit from "../assets/image/edit.png";
 import Search from "../assets/image/search.png";
 import styled from "styled-components";
-import style from "../../node_modules/@mui/system/esm/style/style";
 
 const ListPage = () => {
     const [user, setUser] = useState([]);
