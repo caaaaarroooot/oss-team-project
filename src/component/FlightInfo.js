@@ -27,42 +27,41 @@ const ArrivalFlights = () => {
         return `${hours}:${minutes}`;
     };
 
-    // API 호출 함수
-    const fetchArrivalFlights = async () => {
-        const API_KEY = process.env.REACT_APP_FLIGHT_API_KEY;
-        const URL = `http://apis.data.go.kr/B551177/StatusOfPassengerFlightsDSOdp/getPassengerArrivalsDSOdp?serviceKey=${API_KEY}&type=json`;
-
-        try {
-            const response = await fetch(URL);
-            const data = await response.json();
-
-            if (data.response.header.resultCode !== "00") {
-                throw new Error(data.response.header.resultMsg);
-            }
-
-            // 필요한 데이터: 항공코드, 출발지, 도착시간(변경된 시간), 게이트 번호, 현황
-            const filteredData = data.response.body.items
-                .filter((flight) => flight.codeshare === "Master") // Master Flight만 필터링
-                .map((flight) => ({
-                    airlineCode: flight.flightId,
-                    origin: flight.airport,
-                    arrivalTime: formatTime(flight.estimatedDateTime),
-                    gate: flight.gatenumber,
-                    status: flight.remark,
-                    zone: getZone(flight.gatenumber), // 구역 구분 추가
-                }));
-
-            setFlights(filteredData);
-            setLoading(false);
-        } catch (error) {
-            setError(error.message);
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
+        const fetchArrivalFlights = async () => {
+            const API_KEY = process.env.REACT_APP_FLIGHT_API_KEY;
+            const URL = `http://apis.data.go.kr/B551177/StatusOfPassengerFlightsDSOdp/getPassengerArrivalsDSOdp?serviceKey=${API_KEY}&type=json`;
+
+            try {
+                const response = await fetch(URL);
+                const data = await response.json();
+
+                if (data.response.header.resultCode !== "00") {
+                    throw new Error(data.response.header.resultMsg);
+                }
+
+                // 필요한 데이터: 항공코드, 출발지, 도착시간(변경된 시간), 게이트 번호, 현황
+                const filteredData = data.response.body.items
+                    .filter((flight) => flight.codeshare === "Master") // Master Flight만 필터링
+                    .map((flight) => ({
+                        airlineCode: flight.flightId,
+                        origin: flight.airport,
+                        arrivalTime: formatTime(flight.estimatedDateTime),
+                        gate: flight.gatenumber,
+                        status: flight.remark,
+                        zone: getZone(flight.gatenumber), // 구역 구분 추가
+                    }));
+
+                setFlights(filteredData);
+                setLoading(false);
+            } catch (error) {
+                setError(error.message);
+                setLoading(false);
+            }
+        };
+
         fetchArrivalFlights();
-    }, []);
+    }, []); // 빈 의존성 배열로, 컴포넌트가 마운트될 때만 실행
 
     // 구역별 필터링
     const filteredFlights = selectedZone ? flights.filter((flight) => flight.zone === selectedZone) : flights;
