@@ -29,8 +29,8 @@ const ArrivalFlights = () => {
 
     useEffect(() => {
         const fetchArrivalFlights = async () => {
-            // const API_KEY = process.env.REACT_APP_FLIGHT_API_KEY;
-            const URL = `http://apis.data.go.kr/B551177/StatusOfPassengerFlightsDSOdp/getPassengerArrivalsDSOdp?serviceKey=3MFSy4GoljGrNKSzlLp3koZy5ayXV6xJ0bqgs6G%2Fdr92oHXxju%2F84FIrp5iDdlx2kLNPNa3Mi%2B1uhqZaVj07qw%3D%3D&type=json`;
+            const API_KEY = process.env.REACT_APP_FLIGHT_API_KEY;
+            const URL = `http://apis.data.go.kr/B551177/StatusOfPassengerFlightsDSOdp/getPassengerArrivalsDSOdp?serviceKey=${API_KEY}&type=json`;
 
             try {
                 const response = await fetch(URL);
