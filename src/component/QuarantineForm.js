@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 import Select from 'react-select';
 import axios from 'axios';
+import styles from './QuarantineForm.module.css';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import Form from 'react-bootstrap/Form';
+import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 const initialState = {
   createdAt: '',
@@ -23,17 +31,73 @@ const initialState = {
   otherDetail: ''
 };
 
-const QuarantineForm = () => {
-  const [formData, setFormData] = useState(initialState);
+const schema = yup.object().shape({
+  name: yup.string().required('이름은 필수 입력 항목입니다.'),
+  passportId: yup
+    .string()
+    .matches(/^[A-Za-z0-9]*$/, '여권번호는 영어와 숫자만 입력 가능합니다.')
+    .required('여권번호는 필수 입력 항목입니다.'),
+  birthdate: yup.string().required('생년월일은 필수 입력 항목입니다.'),
+  nationality: yup.string().required('국적은 필수 입력 항목입니다.'),
+  flightCode: yup
+    .string()
+    .matches(/^[A-Za-z].*/, '항공편명은 알파벳으로 시작해야 합니다.')
+    .required('항공편명은 필수 입력 항목입니다.'),
+  seatNumber: yup.string().required('좌석번호는 필수 입력 항목입니다.'),
+  gender: yup.string().required('성별은 필수 선택 항목입니다.'),
+  departure: yup.string().required('출발일은 필수 입력 항목입니다.'),
+  address: yup.string().required('주소는 필수 입력 항목입니다.'),
+  contact: yup
+    .string()
+    .matches(/^\d+$/, '연락처는 숫자만 입력 가능합니다.')
+    .required('연락처는 필수 입력 항목입니다.'),
+});
+
+const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, onDelete, onSave }, ref) => {
   const [countryOptions, setCountryOptions] = useState([]);
+  const navigate = useNavigate();
+
+  const { control, formState: { errors }, handleSubmit, watch, setValue } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: existingData,
+  });
+
+  const watchedSymptom = watch("symptom", []);
+  const watchedOther = watch("other", []);
+
+  useEffect(() => {
+    if (watchedSymptom.length > 0 || watchedOther.length > 0) {
+      setValue("isHealthy", false);
+    }
+    else {
+      setValue("isHealthy", true);
+    }
+  }, [watchedSymptom, watchedOther, setValue]);
+
+  useEffect(() => {
+    if (existingData.symptom) {
+      const otherSymptom = existingData.symptom.find((item) => item.startsWith('기타: '));
+      if (otherSymptom) {
+
+        const detailText = otherSymptom.replace('기타: ', '').trim();
+        setValue('otherDetail', detailText);
+        
+       
+        setValue('symptom', [...existingData.symptom.filter((item) => !item.startsWith('기타: ')), '기타']);
+      } else {
+       
+        setValue('symptom', existingData.symptom);
+      }
+    }
+  }, [existingData, setValue]);
 
   useEffect(() => {
     const fetchCountries = async () => {
       try {
         const response = await axios.get('https://restcountries.com/v3.1/all');
-        const countries = response.data.map(country => ({
+        const countries = response.data.map((country) => ({
           value: country.cca2,
-          label: country.name.common
+          label: country.name.common,
         }));
         setCountryOptions(countries);
       } catch (error) {
@@ -43,316 +107,587 @@ const QuarantineForm = () => {
     fetchCountries();
   }, []);
 
-  const handleChange = (e, fieldName) => {
-    const { name, value, type, checked } = e.target;
-    let updatedFormData = { ...formData };
-
-    if (type === 'checkbox') {
-      if (fieldName === 'multiSelect') {
-        if (checked) {
-          updatedFormData[name] = [...updatedFormData[name], value];
-        } else {
-          updatedFormData[name] = updatedFormData[name].filter(item => item !== value);
-        }
-      } else {
-        updatedFormData[name] = checked;
-        if (name === 'isHealthy' && checked) {
-          updatedFormData.symptom = [];
-          updatedFormData.other = [];
-        }
-      }
-    } else {
-      updatedFormData[name] = value;
-    }
-
-    if (updatedFormData.symptom.length > 0 || updatedFormData.other.length > 0) {
-      updatedFormData.isHealthy = false;
-    } else {
-      updatedFormData.isHealthy = true;
-    }
-
-    setFormData(updatedFormData);
-  };
-
-  const handleCountryChange = (selectedOption, fieldName) => {
-    let updatedFormData = { ...formData };
-    if (fieldName === 'nationality') {
-      updatedFormData.nationality = selectedOption ? selectedOption.value : '';
-    } else if (fieldName === 'visitCountry') {
-      updatedFormData.visitCountry = selectedOption ? selectedOption.map(option => option.value) : [];
-    }
-    setFormData(updatedFormData);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
+    console.log("전송하려는 데이터:", data); 
     const currentDate = new Date().toISOString().split('T')[0];
-    
+
     let updatedData = {
-      ...formData,
-      createdAt: formData.createdAt || currentDate,
-      updatedAt: currentDate
+      ...data,
+      createdAt: existingData.createdAt || currentDate, 
+      updatedAt: currentDate,
     };
-  
-    if (formData.otherDetail) {
-      updatedData.symptom = [...updatedData.symptom, formData.otherDetail];
-    }
-  
-    // post 요청 전에 otherDetail 필드 제거
+
+  if (updatedData.symptom.includes("기타") && updatedData.otherDetail && updatedData.otherDetail.trim() !== '') {
+    updatedData.symptom = [...(updatedData.symptom || []), `기타: ${updatedData.otherDetail}`];
+    updatedData.symptom = updatedData.symptom.filter((item) => item !== "기타");
+  }
+
     delete updatedData.otherDetail;
-  
+
     try {
-      const response = await axios.post('https://670c91777e5a228ec1d0b2ca.mockapi.io/api/healthInfo', updatedData);
-      console.log('서버 응답:', response.data);
-      // setFormData(initialState);
+      if (mode === 'new') {
+        await axios.post(
+          'https://670c91777e5a228ec1d0b2ca.mockapi.io/api/healthInfo',
+          updatedData,
+        );
+        Swal.fire({
+          title: '<strong>성공!</strong>',
+          html: '<i>검역 정보가 저장되었습니다.</i>',
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 1200,
+        });
+      } else if (mode === 'edit') {
+        await onSave(updatedData);
+        Swal.fire({
+          title: '<strong>성공!</strong>',
+          html: '<i>성공적으로 수정되었습니다.</i>',
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 1500,
+        });
+        navigate('/');
+      }
     } catch (error) {
       console.error('데이터 전송 중 오류 발생:', error);
+      Swal.fire({
+        title: '오류!',
+        text: '데이터 전송 중 오류가 발생했습니다.',
+        icon: 'error',
+        confirmButtonText: '확인',
+      });
     }
   };
-  
+
+  const handleDelete = async () => {
+    const result = await Swal.fire({
+      title: '정말 삭제하시겠습니까?',
+      text: '이 작업은 되돌릴 수 없습니다!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: '삭제',
+      cancelButtonText: '취소',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await onDelete(existingData.id); 
+        Swal.fire({
+          title: '<strong>삭제 완료!</strong>',
+          html: '<i>데이터가 성공적으로 삭제되었습니다.</i>',
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 1500,
+          timerProgressBar: true,
+        });
+        navigate('/');  // 삭제 후 목록 페이지로 이동
+      } catch (error) {
+        console.error('데이터 삭제 중 오류 발생:', error);
+        Swal.fire({
+          title: '오류!',
+          text: '데이터 삭제 중 오류가 발생했습니다.',
+          icon: 'error',
+          confirmButtonText: '확인',
+        });
+      }
+    }
+  };
 
   return (
-    <div style={{ display: 'flex' }}>
-      <div>
-        <form onSubmit={handleSubmit}>
-          <fieldset>
-            <legend>필수정보</legend>
+    <div className={styles.container}>
+      <div className={`${styles.formHeader} ${styles.first}`}>
+        {mode === 'edit' ? '입국자 정보 [수정]' : '입국자 정보'}
+        <div className={styles.buttonGroup}>
+          {mode === 'edit' && (
+            <>
+              <button type="submit" className={styles.saveButton} onClick={handleSubmit(onSubmit)}>저장</button>
+              <button type="button" className={styles.deleteButton} onClick={handleDelete}>삭제</button>
+            </>
+          )}
+        </div>
+      </div>
+      <div className={styles.formWrapper}>
+        <Form ref={ref} onSubmit={handleSubmit(onSubmit)}>
+          <table>
+            <tbody>
+              <tr>
+                <td colSpan={10}>
+                  <Form.Group className={styles.inlineFormGroup}>
+                    <Form.Label className={styles.formLabel}>이름</Form.Label>
+                    <div className={styles.controlWrapper}>
+                      <Controller
+                        name="name"
+                        control={control}
+                        render={({ field }) => (
+                          <Form.Control
+                            {...field}
+                            className={styles.formControl}
+                            isInvalid={!!errors.name}
+                          />
+                        )}
+                      />
+                      <Form.Control.Feedback type="invalid" className={styles.invalidFeedback}>
+                        {errors.name?.message}
+                      </Form.Control.Feedback>
+                    </div>
+                  </Form.Group>
+                </td>
+                <td >
+                  <Form.Group className={styles.inlineFormGroup}>
+                    <Form.Label className={styles.formLabel}>성별</Form.Label>
+                    <div className={styles.radioGroup}>
+                      <div className={styles.radioButtons}>
+                        <Controller
+                          name="gender"
+                          control={control}
+                          render={({ field }) => (
+                            <>
+                              <Form.Check
+                                {...field}
+                                type="radio"
+                                value="남"
+                                checked={field.value === '남'}
+                                onChange={(e) => field.onChange(e.target.value)}
+                                label="남성"
+                                className={styles.radioInput}
+                              />
+                              <Form.Check
+                                {...field}
+                                type="radio"
+                                value="여"
+                                checked={field.value === '여'}
+                                onChange={(e) => field.onChange(e.target.value)}
+                                label="여성"
+                                className={styles.radioInput}
+                              />
+                            </>
+                          )}
+                        />
+                      </div>
+                      {errors.gender && (
+                        <Form.Control.Feedback type="invalid" className={styles.invalidFeedback}>
+                          {errors.gender.message}
+                        </Form.Control.Feedback>
+                      )}
+                    </div>
+                  </Form.Group>
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={6}>
+                  <Form.Group className={styles.inlineFormGroup}>
+                    <Form.Label className={styles.formLabel}>여권번호</Form.Label>
+                    <div className={styles.controlWrapper}>
+                      <Controller
+                        name="passportId"
+                        control={control}
+                        render={({ field }) => (
+                          <Form.Control
+                            {...field}
+                            className={styles.formControl}
+                            type="text"
+                            isInvalid={!!errors.passportId}
+                          />
+                        )}
+                      />
+                      <Form.Control.Feedback type="invalid" className={styles.invalidFeedback}>
+                        {errors.passportId?.message}
+                      </Form.Control.Feedback>
+                    </div>
+                  </Form.Group>
+                </td>
+                <td colSpan={4}>
+                  <Form.Group className={styles.inlineFormGroup}>
+                    <Form.Label className={styles.formLabel}>국적</Form.Label>
+                    <div className={styles.controlWrapper}>
+                      <Controller
+                        name="nationality"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            {...field}
+                            options={countryOptions}
+                            value={countryOptions.find(option => option.value === field.value)}
+                            onChange={(selectedOption) =>
+                              field.onChange(selectedOption ? selectedOption.value : '')
+                            }
+                            placeholder="국적을 선택하세요"
+                            isSearchable
+                            maxMenuHeight={150}
+                            styles={{
+                              control: (base) => ({
+
+                                ...base,
+                                height: '1rem',
+                                minHeight: '2rem',
+                                minWidth: '150px',
+                                border: '1px solid #ccc', 
+                                borderRadius: '5px',
+                                display: 'flex',
+                                alignItems: 'center', 
+                                fontSize: '0.75rem', 
+                                paddingBottom: '1.1rem', 
+                              }),
+                            }}
+                          />
+                        )}
+                      />
+                      <Form.Control.Feedback type="invalid" className={styles.invalidFeedback}>
+                        {errors.nationality?.message}
+                      </Form.Control.Feedback>
+                    </div>
+                  </Form.Group>
+                </td>
+                <td colSpan={2}>
+                  <Form.Group className={styles.inlineFormGroup}>
+                    <Form.Label className={styles.formLabel}>생년월일</Form.Label>
+                    <div className={styles.controlWrapper}>
+                      <Controller
+                        name="birthdate"
+                        control={control}
+                        render={({ field }) => (
+                          <Form.Control
+                            {...field}
+                            type="date"
+                            className={styles.formControl}
+                            isInvalid={!!errors.birthdate}
+                          />
+                        )}
+                      />
+                      <Form.Control.Feedback type="invalid" className={styles.invalidFeedback}>
+                        {errors.birthdate?.message}
+                      </Form.Control.Feedback>
+                    </div>
+                  </Form.Group>
+                </td>
+              </tr>
+              <tr>
+                <td colSpan={10}>
+                  <Form.Group className={styles.inlineFormGroup}>
+                    <Form.Label className={styles.formLabel}>주소</Form.Label>
+                    <div className={styles.controlWrapper}>
+                      <Controller
+                        name="address"
+                        control={control}
+                        render={({ field }) => (
+                          <Form.Control
+                            {...field}
+                            className={styles.formControl}
+                            type="text"
+                            isInvalid={!!errors.address}
+                          />
+                        )}
+                      />
+                      <Form.Control.Feedback type="invalid" className={styles.invalidFeedback}>
+                        {errors.address?.message}
+                      </Form.Control.Feedback>
+                    </div>
+                  </Form.Group>
+                </td>
+                <td>
+                  <Form.Group className={styles.inlineFormGroup}>
+                    <Form.Label className={styles.formLabel}>연락처</Form.Label>
+                    <div className={styles.controlWrapper}>
+                      <Controller
+                        name="contact"
+                        control={control}
+                        render={({ field }) => (
+                          <Form.Control
+                            {...field}
+                            className={styles.formControl}
+                            type="text"
+                            isInvalid={!!errors.contact}
+                          />
+                        )}
+                      />
+                      <Form.Control.Feedback type="invalid" className={styles.invalidFeedback}>
+                        {errors.contact?.message}
+                      </Form.Control.Feedback>
+                    </div>
+                  </Form.Group>
+
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <h2 className={`${styles.formHeader} ${styles.second}`}>여행 정보</h2>
+          <fieldset className={styles.fieldset}>
             <table>
               <tbody>
                 <tr>
-                  <td colSpan={2}>
-                    <label>
-                      이름:
-                      <input type="text" name="name" value={formData.name} onChange={(e) => handleChange(e)} required />
-                    </label>
+                  <td>
+                    <Form.Group className={styles.inlineFormGroup}>
+                      <Form.Label className={styles.formLabel}>출발국가</Form.Label>
+                      <div className={styles.controlWrapper}>
+                        <Controller
+                          name="departure"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              {...field}
+                              options={countryOptions}
+                              value={countryOptions.find((option) => option.value === field.value)}
+                              onChange={(selectedOption) => field.onChange(selectedOption ? selectedOption.value : '')}
+                              placeholder="출발국가를 선택하세요"
+                              isSearchable
+                              maxMenuHeight={150}
+                              styles={{
+                                control: (base) => ({
+                                  ...base,
+                                  height: '1rem',
+                                  minHeight: '2rem',
+                                  minWidth: '150px',
+                                  border: '1px solid #ccc',
+                                  borderRadius: '5px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  fontSize: '0.75rem',
+                                  paddingBottom: '1.1rem',
+                                }),
+                                container: (base) => ({
+                                  ...base,
+                                  width: '100%',
+                                }),
+                              }}
+                            />
+                          )}
+                        />
+                        {errors.departure && (
+                          <Form.Control.Feedback type="invalid" className={styles.invalidFeedback}>
+                            {errors.departure.message}
+                          </Form.Control.Feedback>
+                        )}
+                      </div>
+                    </Form.Group>
                   </td>
                   <td>
-                    <label>
-                      성별:</label>
-                    <label>
-                      <input type="radio" name="gender" value="남" checked={formData.gender === '남'} onChange={(e) => handleChange(e)} /> 남성
-                    </label>
-                    <label>
-                      <input type="radio" name="gender" value="여" checked={formData.gender === '여'} onChange={(e) => handleChange(e)} /> 여성
-                    </label>
+                    <Form.Group className={styles.inlineFormGroup}>
+                      <Form.Label className={styles.formLabel}>항공편명</Form.Label>
+                      <div className={styles.controlWrapper}>
+                        <Controller
+                          name="flightCode"
+                          control={control}
+                          render={({ field }) => (
+                            <Form.Control
+                              {...field}
+                              className={styles.formControl}
+                              isInvalid={!!errors.flightCode}
+                            />
+                          )}
+                        />
+                        <Form.Control.Feedback type="invalid" className={styles.invalidFeedback}>
+                          {errors.flightCode?.message}
+                        </Form.Control.Feedback>
+                      </div>
+                    </Form.Group>
+                  </td>
+                  <td>
+                    <Form.Group className={styles.inlineFormGroup}>
+                      <Form.Label className={styles.formLabel}>좌석번호</Form.Label>
+                      <div className={styles.controlWrapper}>
+                        <Controller
+                          name="seatNumber"
+                          control={control}
+                          render={({ field }) => (
+                            <Form.Control
+                              {...field}
+                              className={styles.formControl}
+                              isInvalid={!!errors.seatNumber}
+                            />
+                          )}
+                        />
+                        <Form.Control.Feedback type="invalid" className={styles.invalidFeedback} >
+                          {errors.seatNumber?.message}
+                        </Form.Control.Feedback>
+                      </div>
+                    </Form.Group>
                   </td>
                 </tr>
                 <tr>
-                  <td>
-                    <label>
-                      국적:
-                      <Select
-                        name="nationality"
-                        options={countryOptions}
-                        value={countryOptions.find(option => option.value === formData.nationality)}
-                        onChange={(selectedOption) => handleCountryChange(selectedOption, 'nationality')}
-                        placeholder="국적을 선택하세요"
-                        isSearchable
-                        maxMenuHeight={150}
-                      />
-                    </label>
-                  </td>
-                  <td>
-                    <label>
-                      여권 번호:
-                      <input type="text" name="passportId" value={formData.passportId} onChange={(e) => handleChange(e)} required />
-                    </label>
-                  </td>
-                  <td>
-                    <label>
-                      생년월일:
-                      <input type="date" name="birthdate" value={formData.birthdate} onChange={(e) => handleChange(e)} required />
-                    </label>
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={2}>
-                    <label>
-                      주소:
-                      <input type="text" name="address" value={formData.address} onChange={(e) => handleChange(e)} />
-                    </label>
-                  </td>
-                  <td>
-                    <label>
-                      연락처:
-                      <input type="text" name="contact" value={formData.contact} onChange={(e) => handleChange(e)} />
-                    </label>
+                  <td colSpan={3}>
+
                   </td>
                 </tr>
               </tbody>
             </table>
 
-            <fieldset>
-              <legend>여행 정보</legend>
-              <label>
-                출발국가:
-                <input type="text" name="departure" value={formData.departure} onChange={(e) => handleChange(e)} required />
-              </label>
-              <label>
-                항공편명:
-                <input type="text" name="flightCode" value={formData.flightCode} onChange={(e) => handleChange(e)} required />
-              </label>
-              <label>
-                좌석번호:
-                <input type="text" name="seatNumber" value={formData.seatNumber} onChange={(e) => handleChange(e)} required />
-              </label>
-
-              <br />
-              <label>
-                방문 국가 (최근 21일):
-                <Select
+            <Form.Group className={styles.inlineFormGroup}>
+              <Form.Label className={styles.formLabel}>방문 국가 (최근 21일)</Form.Label>
+              <div className={styles.controlWrapper}>
+                <Controller
                   name="visitCountry"
-                  options={countryOptions}
-                  isMulti
-                  value={countryOptions.filter(option => formData.visitCountry.includes(option.value))}
-                  onChange={(selectedOptions) => handleCountryChange(selectedOptions, 'visitCountry')}
-                  placeholder="방문한 국가를 선택하세요 (최대 4개)"
-                  isSearchable
-                  maxMenuHeight={150}
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      {...field}
+                      options={countryOptions}
+                      isMulti
+                      value={countryOptions.filter(option => field.value.includes(option.value))}
+                      onChange={(selectedOptions) => field.onChange(selectedOptions.map(option => option.value))}
+                      placeholder="방문한 국가를 선택하세요 (최대 4개)"
+                      isSearchable
+                      maxMenuHeight={150}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          height: '1rem',
+                          minHeight: '2rem',
+                          border: '1px solid #ccc',
+                          borderRadius: '5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          fontSize: '0.75rem',
+                          paddingBottom: '1.1rem',
+                        }),
+                        container: (base) => ({
+                          ...base,
+                          width: '100%',
+                        }),
+                      }}
+                    />
+                  )}
                 />
-              </label>
-            </fieldset>
+              </div>
+            </Form.Group>
           </fieldset>
 
-          <br />
+          <div className={existingData.isHealthy ? `${styles.formHeader} ${styles.third}` : `${styles.formHeader} ${styles.symptoms}`}>건강상태 정보
+            <Form.Group className={styles.formHeaderButton}>
+              <Controller name="isHealthy" control={control} render={({ field }) => <Form.Check type="checkbox" label="증상 없음" {...field} checked={field.value} />} />
+            </Form.Group></div>
+          <fieldset className={styles.fieldset}>
 
-          <fieldset>
-            <legend>건강 정보</legend>
-            <label>
-              증상 없음:
-              <input type="checkbox" name="isHealthy" checked={formData.isHealthy} onChange={(e) => handleChange(e)} />
-            </label>
-            <br />
-
-            <div style={{ float: 'left' }}>
-              <table>
-                <th colSpan={4}>증상</th>
-                <tbody>
-                  <tr>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="발열" checked={formData.symptom.includes("발열")} onChange={(e) => handleChange(e, 'multiSelect')} /> 발열
-                      </label>
-                    </td>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="오한" checked={formData.symptom.includes("오한")} onChange={(e) => handleChange(e, 'multiSelect')} /> 오한
-                      </label>
-                    </td>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="두통" checked={formData.symptom.includes("두통")} onChange={(e) => handleChange(e, 'multiSelect')} /> 두통
-                      </label>
-                    </td>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="인후통" checked={formData.symptom.includes("인후통")} onChange={(e) => handleChange(e, 'multiSelect')} /> 인후통
-                      </label>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="콧물" checked={formData.symptom.includes("콧물")} onChange={(e) => handleChange(e, 'multiSelect')} /> 콧물
-                      </label>
-                    </td>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="기침" checked={formData.symptom.includes("기침")} onChange={(e) => handleChange(e, 'multiSelect')} /> 기침
-                      </label>
-                    </td>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="호흡곤란" checked={formData.symptom.includes("호흡곤란")} onChange={(e) => handleChange(e, 'multiSelect')} /> 호흡곤란
-                      </label>
-                    </td>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="복통/설사" checked={formData.symptom.includes("복통/설사")} onChange={(e) => handleChange(e, 'multiSelect')} /> 복통/설사
-                      </label>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="구토" checked={formData.symptom.includes("구토")} onChange={(e) => handleChange(e, 'multiSelect')} /> 구토
-                      </label>
-                    </td>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="발진" checked={formData.symptom.includes("발진")} onChange={(e) => handleChange(e, 'multiSelect')} /> 발진
-                      </label>
-                    </td>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="황달" checked={formData.symptom.includes("황달")} onChange={(e) => handleChange(e, 'multiSelect')} /> 황달
-                      </label>
-                    </td>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="symptom" value="의식 저하" checked={formData.symptom.includes("의식 저하")} onChange={(e) => handleChange(e, 'multiSelect')} /> 의식 저하
-                      </label>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colSpan="1">
-                      <label>
-                        <input type="checkbox" name="symptom" value="점막 지속 출혈" checked={formData.symptom.includes("점막 지속 출혈")} onChange={(e) => handleChange(e, 'multiSelect')} /> 점막 지속 출혈
-                      </label>
-                    </td>
-                    <td colSpan="3">
-                      <label>
-                        <input type="checkbox" name="symptom" value="기타" checked={formData.symptom.includes("기타")} onChange={(e) => handleChange(e, 'multiSelect')} /> 기타
-                      </label>
-                      <textarea name="otherDetail" value={formData.otherDetail || ''} onChange={(e) => handleChange(e)}></textarea>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className={`${styles.inlineFormGroup} ${styles.symptoms}`}>
+              <div >
+                <table name='symptomTable' className={styles.symptomTable}>
+                  <th colSpan={4}>증상</th>
+                  <tbody>
+                    <tr>
+                      <td className={watchedSymptom.includes("발열") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="발열" label="발열" checked={field.value?.includes("발열")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td className={watchedSymptom.includes("오한") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="오한" label="오한" checked={field.value?.includes("오한")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td className={watchedSymptom.includes("두통") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="두통" label="두통" checked={field.value?.includes("두통")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td className={watchedSymptom.includes("인후통") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="인후통" label="인후통" checked={field.value?.includes("인후통")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className={watchedSymptom.includes("콧물") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="콧물" label="콧물" checked={field.value?.includes("콧물")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td className={watchedSymptom.includes("기침") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="기침" label="기침" checked={field.value?.includes("기침")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td className={watchedSymptom.includes("호흡곤란") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="호흡곤란" label="호흡곤란" checked={field.value?.includes("호흡곤란")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td className={watchedSymptom.includes("복통/설사") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="복통/설사" label="복통/설사" checked={field.value?.includes("복통/설사")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className={watchedSymptom.includes("구토") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="구토" label="구토" checked={field.value?.includes("구토")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td className={watchedSymptom.includes("발진") ? styles.checkedCell : ''} >
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="발진" label="발진" checked={field.value?.includes("발진")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td className={watchedSymptom.includes("황달") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="황달" label="황달" checked={field.value?.includes("황달")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td className={watchedSymptom.includes("의식 저하") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="의식 저하" label="의식 저하" checked={field.value?.includes("의식 저하")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className={watchedSymptom.includes("점막 지속 출혈") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="점막 지속 출혈" label="점막 지속 출혈" checked={field.value?.includes("점막 지속 출혈")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                      <td colSpan={3} className={watchedSymptom.includes("기타") ? styles.checkedCell : ''}>
+                        <Form.Group className={`${styles.inlineFormGroup} ${styles.other}`}>
+                          <Controller name="symptom" control={control} render={({ field }) => <Form.Check type="checkbox" value="기타" label="기타" checked={field.value?.includes("기타")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                          <Controller name="otherDetail" control={control} render={({ field }) => <Form.Control className={styles.formControl} type="text" {...field} value={field.value || ''}/>} />
+                        </Form.Group>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <br />
+              <div>
+                <table className={styles.symptomTable}>
+                  <th colSpan={4}>의심 활동</th>
+                  <tbody>
+                    <tr>
+                      <td className={watchedOther.includes("증상 관련 약 복용") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="other" control={control} render={({ field }) => <Form.Check type="checkbox" value="증상 관련 약 복용" label="증상 관련 약 복용" checked={field.value?.includes("증상 관련 약 복용")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className={watchedOther.includes("현지 병원 방문") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="other" control={control} render={({ field }) => <Form.Check type="checkbox" value="현지 병원 방문" label="현지 병원 방문" checked={field.value?.includes("현지 병원 방문")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className={watchedOther.includes("동물 접촉") ? styles.checkedCell : ''}>
+                        <Form.Group>
+                          <Controller name="other" control={control} render={({ field }) => <Form.Check type="checkbox" value="동물 접촉" label="동물 접촉" checked={field.value?.includes("동물 접촉")} onChange={(e) => field.onChange(e.target.checked ? [...(field.value || []), e.target.value] : field.value.filter((val) => val !== e.target.value))} />} />
+                        </Form.Group>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
             <br />
-
-            <div style={{ float: 'right' }}>
-              <table>
-                <th colSpan={4}>의심 활동</th>
-                <tbody>
-                  <tr>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="other" value="증상 관련 약 복용" checked={formData.other.includes("증상 관련 약 복용")} onChange={(e) => handleChange(e, 'multiSelect')} /> 증상 관련 약 복용
-                      </label>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="other" value="현지 병원 방문" checked={formData.other.includes("현지 병원 방문")} onChange={(e) => handleChange(e, 'multiSelect')} /> 현지 병원 방문
-                      </label>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <label>
-                        <input type="checkbox" name="other" value="동물접촉" checked={formData.other.includes("동물접촉")} onChange={(e) => handleChange(e, 'multiSelect')} /> 동물 접촉 여부
-                      </label>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <br />
-            <label>
-              비고:
-              <textarea name="note" value={formData.note} onChange={(e) => handleChange(e)}></textarea>
-            </label>
+            <Form.Group className={styles.inlineFormGroup}>
+              <Form.Label className={styles.formLabel}>비고</Form.Label>
+              <div className={styles.controlWrapper}>
+                <Controller name="note" control={control} render={({ field }) => <Form.Control className={styles.formControl} type="text" {...field} />} />
+              </div>
+            </Form.Group>
           </fieldset>
-          <button type="submit">제출</button>
-        </form>
+        </Form>
       </div>
-      
     </div>
-
   );
-};
+});
 
 export default QuarantineForm;

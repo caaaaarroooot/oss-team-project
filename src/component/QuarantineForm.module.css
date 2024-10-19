@@ -1,0 +1,234 @@
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+}
+
+.checkedCell {
+  background-color: rgb(255, 174, 174) !important;
+  font-weight: bold !important;
+}
+
+.controlWrapper {
+  align-items: center;
+  background-color: #ffffff !important;
+  border: 1px solid #d6d6d6 !important;
+  flex: 1 !important;
+  padding: 0.3rem !important;
+  position: relative !important;
+  width: 100% !important;
+}
+
+.deleteButton {
+  background-color: #c51818;
+  border: none !important;
+  border-radius: 5px;
+  color: white;
+  font-size: 1rem !important;
+  font-weight: 600;
+  height: 2rem !important;
+  transition: background-color 0.3s !important;
+  width: 5rem !important;
+}
+
+.deleteButton:hover {
+  background-color: white;
+  color: #841818;
+}
+
+.fieldset {
+  border: 1px solid #cacaca !important;
+  border-bottom-left-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+  margin-bottom: 1.5rem !important;
+  padding: 0.8rem !important;
+}
+
+.formControl {
+  background-color: #ffffff !important;
+  border: 1px solid #dddddd !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  height: 2.0rem !important;
+  margin: 0 !important;
+  padding: 0.5rem !important;
+  resize: none !important;
+}
+
+.formHeader {
+  border-top-left-radius: 0.5rem !important;
+  border-top-right-radius: 0.5rem !important;
+  color: #ffffff !important;
+  display: flex !important;
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+  justify-content: space-between;
+  margin-bottom: 0 !important;
+  margin-top: 1rem !important;
+  padding: 0.7rem !important;
+  text-align: left !important;
+}
+
+.formHeader.first {
+  background-color: #4987e6;
+  margin-top: 0 !important;
+}
+
+.formHeader.second {
+  background-color: #007b91;
+}
+
+.formHeader.symptoms {
+  background-color: #df6172;
+}
+
+.formHeader.third {
+  background-color: #005679;
+}
+
+.formHeaderButton {
+  align-items: center;
+  background-color: #ffffff !important;
+  border: 1px solid #dddddd !important;
+  border-radius: 5px;
+  color: rgb(7, 148, 89);
+  font-size: 1.3rem;
+  height: 2.1rem;
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.formLabel {
+  background-color: #e9e9e9 !important;
+  border: 1px solid #afafaf !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  padding: 0.55rem !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+.formSelect {
+  background-color: #ffffff !important;
+  border-radius: 0 !important;
+  height: 2.0rem !important;
+}
+
+.formWrapper {
+  background-color: white !important;
+  border-bottom-left-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+  padding: 2rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+.inlineFormGroup {
+  align-items: stretch;
+  display: flex !important;
+}
+
+.inlineFormGroup.other {
+  padding-right: 0.5rem !important;
+}
+
+.inlineFormGroup.symptoms {
+  align-items: flex-start !important;
+  gap: 2rem !important;
+  height: auto !important;
+  white-space: nowrap !important;
+}
+
+.inputGroup {
+  margin-bottom: 0rem !important;
+}
+
+.invalidFeedback {
+  color: red !important;
+  display: block !important;
+  font-size: 0.75rem !important;
+  margin-top: 0.2rem !important;
+}
+
+.legend {
+  font-weight: bold !important;
+  padding: 0 0.5rem !important;
+  width: auto !important;
+}
+
+.radioButtons {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.radioGroup {
+  align-items: center;
+  border: 1px solid #d6d6d6 !important;
+  display: flex;
+  flex-direction: column !important;
+  padding: 0.48rem !important;
+  padding-bottom: 0;
+  white-space: nowrap !important;
+  width: 100%;
+}
+
+.radioInput {
+  margin-left: 0.5rem;
+}
+
+.saveButton {
+  background-color: #006b00;
+  border: none !important;
+  border-radius: 5px;
+  color: white;
+  font-size: 1rem !important;
+  font-weight: 600;
+  height: 2rem !important;
+  transition: background-color 0.3s !important;
+  width: 5rem !important;
+}
+
+.saveButton:hover {
+  background-color: white;
+  color: #005f00;
+}
+
+.submitButton {
+  background-color: #0d6efd !important;
+  border: none !important;
+  border-radius: 0.375rem !important;
+  color: white !important;
+  cursor: pointer !important;
+  font-size: 1rem !important;
+  padding: 0.75rem 1.5rem !important;
+  transition: background-color 0.3s !important;
+}
+
+.submitButton:hover {
+  background-color: #0b5ed7 !important;
+}
+
+.symptomTable td {
+  background-color: white;
+  border: 1px solid #cacaca;
+  height: 3rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  padding-left: 1rem !important;
+  width: 10rem !important;
+}
+
+table {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+td {
+  padding: 0 !important;
+}
