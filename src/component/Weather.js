@@ -30,7 +30,9 @@ function Weather() {
     return (
         <div>
             <h1>Weather App</h1>
-            <button onClick={getCurrentLocation}>{loading ? "Loading..." : "Get Current Location Weather"}</button>
+            <button onClick={getCurrentLocation} style={{ color: "black" }}>
+                {loading ? "Loading..." : "Get Current Location Weather"}
+            </button>
 
             {weather && (
                 <div>
