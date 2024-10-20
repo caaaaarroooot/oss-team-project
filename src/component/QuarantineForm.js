@@ -106,8 +106,8 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
       try {
         const response = await axios.get('https://restcountries.com/v3.1/all');
         const countries = response.data.map((country) => ({
-          value: country.translations.kor ? country.translations.kor.official : country.name.official,
-          label:country.translations.kor ? country.translations.kor.official : country.name.official,
+          value: country.translations.kor ? country.translations.kor.common : country.name.common,
+          label:country.translations.kor ? country.translations.kor.common : country.name.common,
         }));
         setCountryOptions(countries);
       } catch (error) {
