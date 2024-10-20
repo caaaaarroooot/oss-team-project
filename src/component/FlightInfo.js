@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import styles from "./FlightInfo.module.css";
+import left from "../assets/image/left.svg";
+import right from "../assets/image/right.svg";
+import refresh from "../assets/image/refresh.svg";
 
 const ArrivalFlights = () => {
     const [flights, setFlights] = useState([]);
@@ -7,7 +11,6 @@ const ArrivalFlights = () => {
     const [page, setPage] = useState(0);
     const [selectedZone, setSelectedZone] = useState("");
 
-    // 구역 구분 함수
     const getZone = (gate) => {
         const gateNum = parseInt(gate, 10);
         if (gateNum >= 29 && gateNum <= 41) return "서편 앤틀러";
@@ -18,7 +21,7 @@ const ArrivalFlights = () => {
         if (gateNum >= 118 && gateNum <= 132) return "탑승동 서편";
         if (gateNum >= 230 && gateNum <= 250) return "T2 동편";
         if (gateNum >= 251 && gateNum <= 270) return "T2 서편";
-        return "Unknown"; // 해당되지 않는 경우
+        return "Unknown";
     };
 
     const formatTime = (dateTime) => {
@@ -27,10 +30,10 @@ const ArrivalFlights = () => {
         return `${hours}:${minutes}`;
     };
 
-    useEffect(() => {
-        const fetchArrivalFlights = async () => {
-            const API_KEY = process.env.REACT_APP_FLIGHT_API_KEY;
-            const URL = `https://apis.data.go.kr/B551177/StatusOfPassengerFlightsDSOdp/getPassengerArrivalsDSOdp?serviceKey=${API_KEY}&type=json`;
+    const fetchArrivalFlights = useCallback(async () => {
+        setLoading(true); // 새로고침 시 로딩 상태 설정
+        const API_KEY = process.env.REACT_APP_FLIGHT_API_KEY;
+        const URL = `https://apis.data.go.kr/B551177/StatusOfPassengerFlightsDSOdp/getPassengerArrivalsDSOdp?serviceKey=${API_KEY}&type=json`;
 
             try {
                 const response = await fetch(URL);
@@ -40,42 +43,43 @@ const ArrivalFlights = () => {
                     throw new Error(data.response.header.resultMsg);
                 }
 
-                // 필요한 데이터: 항공코드, 출발지, 도착시간(변경된 시간), 게이트 번호, 현황
-                const filteredData = data.response.body.items
-                    .filter((flight) => flight.codeshare === "Master") // Master Flight만 필터링
-                    .map((flight) => ({
-                        airlineCode: flight.flightId,
-                        origin: flight.airport,
-                        arrivalTime: formatTime(flight.estimatedDateTime),
-                        gate: flight.gatenumber,
-                        status: flight.remark,
-                        zone: getZone(flight.gatenumber), // 구역 구분 추가
-                    }));
+            const filteredData = data.response.body.items
+                .filter((flight) => flight.codeshare === "Master")
+                .map((flight) => ({
+                    airlineCode: flight.flightId,
+                    origin: flight.airport,
+                    arrivalTime: formatTime(flight.estimatedDateTime),
+                    gate: flight.gatenumber,
+                    status: flight.remark,
+                    zone: getZone(flight.gatenumber),
+                }));
 
-                setFlights(filteredData);
-                setLoading(false);
-            } catch (error) {
-                setError(error.message);
-                setLoading(false);
-            }
-        };
+            setFlights(filteredData);
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setLoading(false); // 로딩 종료
+        }
+    }, []);
 
+    // 컴포넌트가 처음 렌더링될 때 데이터를 로드합니다.
+    useEffect(() => {
         fetchArrivalFlights();
-    }, []); // 빈 의존성 배열로, 컴포넌트가 마운트될 때만 실행
+    }, [fetchArrivalFlights]);
 
-    // 구역별 필터링
-    const filteredFlights = selectedZone ? flights.filter((flight) => flight.zone === selectedZone) : flights;
+    const filteredFlights = selectedZone
+        ? flights.filter((flight) => flight.zone === selectedZone)
+        : flights;
 
     const flightsToDisplay = filteredFlights.slice(page * 5, (page + 1) * 5);
 
     if (loading) {
-        return <p>Loading...</p>;
+        return <p className={styles['arrival-flights-container']}>Loading...</p>;
     }
     if (error) {
         return <p>Error: {error}</p>;
     }
 
-    // 선택 가능한 구역 옵션
     const zones = [
         "서편 앤틀러",
         "서편 통로",
@@ -88,25 +92,13 @@ const ArrivalFlights = () => {
     ];
 
     return (
-        <div
-            style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                flexDirection: "column",
-                border: "1px solid #ccc",
-                padding: "20px",
-                borderRadius: "10px",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                maxWidth: "800px",
-                margin: "auto",
-            }}
-        >
-            <h1>Arriving Flights by Gate Zone</h1>
+        <div className={styles['arrival-flights-container']}>
+            <h1 className={styles['arrival-flights-container h1']}>항공편 도착 정보</h1>
 
-            {/* 구역 선택 */}
-            <div style={{ marginBottom: "20px" }}>
-                <label htmlFor="zone-select">Select a zone: </label>
+            <div className={styles['zone-select-container']}>
+                <label htmlFor="zone-select" className={styles['zone-select-container label']}>
+                    현재 근무지:
+                </label>
                 <select
                     id="zone-select"
                     value={selectedZone}
@@ -114,68 +106,63 @@ const ArrivalFlights = () => {
                         setSelectedZone(e.target.value);
                         setPage(0);
                     }}
+                    className={styles['zone-select-container select']}
                 >
-                    <option value="">All Zones</option>
+                    <option value="">전체</option>
                     {zones.map((zone) => (
                         <option key={zone} value={zone}>
                             {zone}
                         </option>
                     ))}
                 </select>
+                <button onClick={fetchArrivalFlights} className={styles['refresh-button']}>
+                <img src={refresh} alt="refresh" />
+                </button>
             </div>
 
+            
+
             {flightsToDisplay.length === 0 ? (
-                <p>No flights available in this zone</p>
+                <p className={styles['no-flights-message']}>예정된 비행편이 없습니다.</p>
             ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <table className={styles['arrival-flights-table']}>
                     <thead>
                         <tr>
-                            <th style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>Arrival Time</th>
-                            <th style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>Airline Code</th>
-                            <th style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>Origin</th>
-                            <th style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>Gate</th>
-                            <th style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>Status</th>
+                            <th>도착시간</th>
+                            <th>항공편명</th>
+                            <th>출발지</th>
+                            <th>게이트</th>
+                            <th>현황</th>
                         </tr>
                     </thead>
                     <tbody>
                         {flightsToDisplay.map((flight, index) => (
                             <tr key={index}>
-                                <td style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>
-                                    {flight.arrivalTime}
-                                </td>
-                                <td style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>
-                                    {flight.airlineCode}
-                                </td>
-                                <td style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>{flight.origin}</td>
-                                <td style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>{flight.gate}</td>
-                                <td style={{ borderBottom: "1px solid #ddd", padding: "10px" }}>{flight.status}</td>
+                                <td>{flight.arrivalTime}</td>
+                                <td>{flight.airlineCode}</td>
+                                <td>{flight.origin}</td>
+                                <td>{flight.gate}</td>
+                                <td className={`${styles['status-cell']} ${styles[flight.status === '도착' ? 'status-arrived' : flight.status === '지연' ? 'status-delayed' : flight.status === '착륙' ? 'status-landed' : '']}`}>{flight.status}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             )}
 
-            {/* 페이지네이션 버튼 */}
-            <div style={{ marginTop: "20px" }}>
+            <div className={styles['pagination-buttons']}>
                 <button
                     disabled={page === 0}
                     onClick={() => setPage(page - 1)}
-                    style={{
-                        marginRight: "10px",
-                        padding: "10px",
-                        borderRadius: "5px",
-                        border: "1px solid #ccc",
-                        cursor: "pointer",
-                    }}
+                    className={styles['pagination-buttons button']}
                 >
-                    Previous
+                    <img src={left} alt="left" />
                 </button>
                 <button
                     disabled={(page + 1) * 5 >= filteredFlights.length}
                     onClick={() => setPage(page + 1)}
-                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid #ccc", cursor: "pointer" }}
+                    className={styles['pagination-buttons button']}
                 >
-                    Next
+                    <img src={right} alt="right" />
                 </button>
             </div>
         </div>

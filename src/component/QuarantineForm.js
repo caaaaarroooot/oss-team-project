@@ -327,11 +327,10 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
                             maxMenuHeight={150}
                             styles={{
                               control: (base) => ({
-
                                 ...base,
                                 height: '1rem',
                                 minHeight: '2rem',
-                                minWidth: '150px',
+                                minWidth: '10rem',
                                 border: '1px solid #ccc',
                                 borderRadius: '5px',
                                 display: 'flex',
@@ -439,7 +438,7 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
                               options={countryOptions}
                               value={countryOptions.find((option) => option.value === field.value)}
                               onChange={(selectedOption) => field.onChange(selectedOption ? selectedOption.value : '')}
-                              placeholder="출발국가를 선택하세요"
+                              placeholder="출발국가"
                               isSearchable
                               maxMenuHeight={150}
                               styles={{
@@ -447,7 +446,7 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
                                   ...base,
                                   height: '1rem',
                                   minHeight: '2rem',
-                                  minWidth: '150px',
+                                  width: '10rem',
                                   border: '1px solid #ccc',
                                   borderRadius: '5px',
                                   display: 'flex',
