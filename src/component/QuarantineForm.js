@@ -45,7 +45,7 @@ const schema = yup.object().shape({
     .required('항공편명은 필수 입력 항목입니다.'),
   seatNumber: yup.string().required('좌석번호는 필수 입력 항목입니다.'),
   gender: yup.string().required('성별은 필수 선택 항목입니다.'),
-  departure: yup.string().required('출발일은 필수 입력 항목입니다.'),
+  departure: yup.string().required('출발국은 필수 입력 항목입니다.'),
   address: yup.string().required('주소는 필수 입력 항목입니다.'),
   contact: yup
     .string()
@@ -57,7 +57,7 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
   const [countryOptions, setCountryOptions] = useState([]);
   const navigate = useNavigate();
 
-  const { control, formState: { errors }, handleSubmit, watch, setValue } = useForm({
+  const { control, formState: { errors }, handleSubmit, watch, setValue, reset } = useForm({
     resolver: yupResolver(schema),
     defaultValues: existingData,
   });
@@ -65,6 +65,7 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
   const watchedSymptom = watch("symptom", []);
   const watchedOther = watch("other", []);
   const watchedIsHealthy = watch("isHealthy", true);
+  const isNotHealthy = watchedSymptom.length > 0 || watchedOther.length > 0;
 
   useEffect(() => {
     if (watchedIsHealthy) {
@@ -74,10 +75,10 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
   }, [watchedIsHealthy, setValue]);
 
   useEffect(() => {
-    if (watchedSymptom.length > 0 || watchedOther.length > 0) {
+    if (isNotHealthy) {
       setValue("isHealthy", false);
     }
-  }, [watchedSymptom, watchedOther, setValue]);
+  }, [isNotHealthy, setValue]);
 
   useEffect(() => {
     if (existingData.symptom) {
@@ -98,15 +99,15 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
       setValue("other", existingData.other);
     }
   }, [existingData, setValue]);
-  
+
 
   useEffect(() => {
     const fetchCountries = async () => {
       try {
         const response = await axios.get('https://restcountries.com/v3.1/all');
         const countries = response.data.map((country) => ({
-          value: country.cca2,
-          label: country.name.common,
+          value: country.translations.kor ? country.translations.kor.official : country.name.official,
+          label:country.translations.kor ? country.translations.kor.official : country.name.official,
         }));
         setCountryOptions(countries);
       } catch (error) {
@@ -146,6 +147,8 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
           showConfirmButton: false,
           timer: 1200,
         });
+        reset(initialState,);
+
       } else if (mode === 'edit') {
         await onSave(updatedData);
         Swal.fire({
@@ -318,9 +321,9 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
                           <Select
                             {...field}
                             options={countryOptions}
-                            value={countryOptions.find(option => option.value === field.value)}
+                            value={countryOptions.find(option => option.value === field.value) || null}
                             onChange={(selectedOption) =>
-                              field.onChange(selectedOption ? selectedOption.value : '')
+                              field.onChange(selectedOption ? selectedOption.value : null)
                             }
                             placeholder="국적을 선택하세요"
                             isSearchable
@@ -436,8 +439,10 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
                             <Select
                               {...field}
                               options={countryOptions}
-                              value={countryOptions.find((option) => option.value === field.value)}
-                              onChange={(selectedOption) => field.onChange(selectedOption ? selectedOption.value : '')}
+                              value={countryOptions.find(option => option.value === field.value) || null}
+                              onChange={(selectedOption) =>
+                                field.onChange(selectedOption ? selectedOption.value : null)
+                              }
                               placeholder="출발국가"
                               isSearchable
                               maxMenuHeight={150}
@@ -561,7 +566,7 @@ const QuarantineForm = forwardRef(({ mode = 'new', existingData = initialState, 
             </Form.Group>
           </fieldset>
 
-          <div className={existingData.isHealthy ? `${styles.formHeader} ${styles.third}` : `${styles.formHeader} ${styles.symptoms}`}>건강상태 정보
+          <div className={isNotHealthy ? `${styles.formHeader} ${styles.symptoms}` : `${styles.formHeader} ${styles.third}`}>건강상태 정보
             <Form.Group className={styles.formHeaderButton}>
               <Controller name="isHealthy" control={control} render={({ field }) => <Form.Check type="checkbox" label="증상 없음" {...field} checked={field.value} />} />
             </Form.Group></div>
